@@ -48,7 +48,6 @@ python src/cv_analysis.py \
 -a positive_sample_1 \
 -b negative_sample_1 \
 -c test_1 \
--v \
 -s submissions/submission_5.csv
 
 

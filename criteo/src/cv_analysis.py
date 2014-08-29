@@ -53,14 +53,15 @@ X = train_df.ix[:,args.fields].values
 
 test_X = test_df.ix[:,args.fields].values
 
+#	clf = LogisticRegression(C = 0.5, random_state = args.seedno)
+clf = RandomForestClassifier(n_estimators = 50, random_state = args.seedno)
+
 if args.crossval == True:
 	print "Performing cross validation..."
 	## CV
 	cv = StratifiedKFold(y, n_folds = 3, shuffle = True, random_state = args.seedno)
 
 	score = []
-#	clf = LogisticRegression(C = 0.5, random_state = args.seedno)
-	clf = RandomForestClassifier(n_estimators = 50, random_state = args.seedno)
 	for train_index, test_index in cv:
 		print("TRAIN:", train_index, "TEST:", test_index)
 		X_train, X_test = X[train_index], X[test_index]
@@ -82,7 +83,7 @@ if args.submit != None:
 	clf.fit(X,y)
 
 	print "Making test predictions..." 
-	result = CLF.predict_proba(test_X)
+	result = clf.predict_proba(test_X)
 	y_hat = [class_prob[1] for class_prob in result]
 	submission = DataFrame(test_df['Id'])
 	submission['Predicted'] = Series(y_hat, index = submission.index)
