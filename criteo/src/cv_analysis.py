@@ -4,6 +4,7 @@ from pandas import DataFrame, HDFStore, Series, concat
 import numpy as np
 from sklearn.cross_validation import StratifiedKFold
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score, log_loss
 import random as rd
 import argparse
@@ -58,12 +59,13 @@ if args.crossval == True:
 	cv = StratifiedKFold(y, n_folds = 3, shuffle = True, random_state = args.seedno)
 
 	score = []
+#	clf = LogisticRegression(C = 0.5, random_state = args.seedno)
+	clf = RandomForestClassifier(n_estimators = 50, random_state = args.seedno)
 	for train_index, test_index in cv:
 		print("TRAIN:", train_index, "TEST:", test_index)
 		X_train, X_test = X[train_index], X[test_index]
 		y_train, y_test = y[train_index], y[test_index]
 
-		clf = LogisticRegression(C = 0.5, random_state = args.seedno)
 		clf.fit(X_train, y_train)
 		result = clf.predict_proba(X_test)
 		cv_score = log_loss(y_test,result)
@@ -76,9 +78,8 @@ if args.crossval == True:
 
 if args.submit != None:
 	# Make final predictions on test set
-	CLF = LogisticRegression(C = 0.5, random_state = args.seedno)
 	print "Training final model..."
-	CLF.fit(X, y)
+	clf.fit(X,y)
 
 	print "Making test predictions..." 
 	result = CLF.predict_proba(test_X)
