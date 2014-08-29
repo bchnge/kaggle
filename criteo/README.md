@@ -3,5 +3,5 @@ criteo
 
 criteo -- https://www.kaggle.com/c/criteo-display-ad-challenge
 
-scripts
--------
+construct database
+--
