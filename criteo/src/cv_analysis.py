@@ -1,75 +1,88 @@
-from pandas import DataFrame, HDFStore, Series
+### cv_analysis.py
+
+from pandas import DataFrame, HDFStore, Series, concat
 import numpy as np
-from zipfile import ZipFile
 from sklearn.cross_validation import StratifiedKFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score, log_loss
 import random as rd
+import argparse
 
-# Read dataframes from stores
-store = HDFStore('store1')
-df = store['train_sample_123']
-store.close()
+# Set parameters
+parser = argparse.ArgumentParser()
+parser.add_argument('-f', '--fields', nargs='+', type = str, help = "Fields to extract from table")
+parser.add_argument('-x', '--seedno', type = int, help = 'set random seed number')
+parser.add_argument('-a', '--train_pos', type = str, help = 'name of dataframe to save results to')
+parser.add_argument('-b', '--train_neg', type = str, help = 'name of store to save results to')
+parser.add_argument('-c', '--test', type = str, help = 'name of store to save results to')
+parser.add_argument('-v', '--crossval',  action='store_true', default = False)
+parser.add_argument('-s', '--submit', type = str, help = 'name of store to save results to', default = None)
 
-rd.seed(123)
+args = parser.parse_args()
 
-test_store = HDFStore('test_store')
-test_df = test_store['test_1']
+# Open data stores
+train_store = HDFStore('queries/train_queries.h5')
+test_store = HDFStore('queries/test_queries.h5')
+
+# Extract data frames
+train_df = concat([train_store[args.train_pos], train_store[args.train_neg]])
+test_df = test_store[args.test]
+
+# Close data stores
+train_store.close()
 test_store.close()
 
 # Replace '' with NaN
-for column in df.columns[1:]:
-	df[column] = df[column].replace('',np.nan)
-	test_df[column] = test_df[column].replace('',np.nan)
+for f in args.fields:
+	train_df[f] = train_df[f].replace('',np.nan)
+	test_df[f] = test_df[f].replace('',np.nan)
 
-# obtain impute value
-median_values = df.median(axis = 0)
-mean_values = df.mean(axis = 0)
+# Obtain imputation values
+median_values = train_df.ix[:, args.fields].median(axis = 0)
+mean_values = train_df.ix[:, args.fields].mean(axis = 0)
+impute_values = mean_values 
 
 # set up imputation dictionary
-impute_dict = dict(zip(df.columns[1:], mean_values[1:]))
-df = df.fillna(impute_dict)
+impute_dict = dict(zip(args.fields, impute_values))
+train_df = train_df.fillna(impute_dict)
 test_df = test_df.fillna(impute_dict)
 
-y = df['Label'].values
-X = df.ix[:,1:].values	
+y = train_df['Label'].values
+X = train_df.ix[:,args.fields].values	
 
-test_X = test_df.ix[:,1:].values
+test_X = test_df.ix[:,args.fields].values
 
+if args.crossval == True:
+	print "Performing cross validation..."
+	## CV
+	cv = StratifiedKFold(y, n_folds = 3, shuffle = True, random_state = args.seedno)
 
-### CV
+	score = []
+	for train_index, test_index in cv:
+		print("TRAIN:", train_index, "TEST:", test_index)
+		X_train, X_test = X[train_index], X[test_index]
+		y_train, y_test = y[train_index], y[test_index]
 
-# cv = StratifiedKFold(y, n_folds = 3)
+		clf = LogisticRegression(C = 0.5, random_state = args.seedno)
+		clf.fit(X_train, y_train)
+		result = clf.predict_proba(X_test)
+		cv_score = log_loss(y_test,result)
+		print cv_score
+		score.append(cv_score)
 
-# score = []
-# for train_index, test_index in cv:
-# 	print("TRAIN:", train_index, "TEST:", test_index)
-# 	X_train, X_test = X[train_index], X[test_index]
-# 	y_train, y_test = y[train_index], y[test_index]
+	print score
+	print np.array(score).mean()
+	print np.array(score).std()
 
-# 	clf = LogisticRegression(C = 0.5)
-# 	clf.fit(X_train, y_train)
-# 	result = clf.predict_proba(X_test)
-# #	y_hat = [class_prob[1] for class_prob in result]
-# #	score.append(roc_auc_score(y_test, y_hat))
-# 	score.append(log_loss(y_test, result))
+if args.submit != None:
+	# Make final predictions on test set
+	CLF = LogisticRegression(C = 0.5, random_state = args.seedno)
+	print "Training final model..."
+	CLF.fit(X, y)
 
-
-# print score
-# print np.array(score).mean()
-# print np.array(score).std()
-
-
-#####
-CLF = LogisticRegression(C = 0.5)
-print "Training final model..."
-CLF.fit(X, y)
-
-print "Making predictions..." 
-result = CLF.predict_proba(test_X)
-y_hat = [class_prob[1] for class_prob in result]
-
-submission = DataFrame(test_df['Id'])
-submission['Predicted'] = Series(y_hat)
-
-submission.to_csv('submission_2.csv', index = False)
+	print "Making test predictions..." 
+	result = CLF.predict_proba(test_X)
+	y_hat = [class_prob[1] for class_prob in result]
+	submission = DataFrame(test_df['Id'])
+	submission['Predicted'] = Series(y_hat, index = submission.index)
+	submission.to_csv(args.submit, index = False)
