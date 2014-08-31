@@ -15,7 +15,7 @@ args = parser.parse_args()
 
 for field in args.fields:
 	# Perform query
-	query_filter = ' ' if args.min_instance == None else ' WHERE N >= ' + str(args.min_instance)
+	query_filter = ' ' if args.min_instance == None else ' HAVING N >= ' + str(args.min_instance)
 	query_limit = ' ' if args.top == None else ' LIMIT ' + str(args.top)
 
 	query = "SELECT %s, sum(N) as N, sum(Label*N)*1.0/sum(N) as PctPos FROM ct_%s GROUP BY  %s %s ORDER BY abs(0.5 - PctPos) ASC %s;" %(field, field.lower(), field, query_filter, query_limit)
@@ -28,6 +28,8 @@ for field in args.fields:
 
 	# List of categorical features to binarize dataset with
 	features = [item[0] for item in result]
+
+	print field + ' has ' + str(len(features)) + ' features'
 
 	with open('data/categorical_features/feats_%s.csv' % field, 'w') as theFile: 
 		for item in features:
