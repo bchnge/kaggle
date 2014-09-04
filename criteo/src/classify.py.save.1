@@ -1,0 +1,13 @@
+from pandas import HDFStore, DataFrame
+from pandas.io.pytables import read_hdf
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-i', '--input_filename', type = str, help = "Fields to get categorical features for")
+parser.add_argument('-t', '--table', type = str, help = "Output data store")
+
+args = parser.parse_args()
+
+df_reader = read_hdf(args.input_filename, args.table, chunksize = 10)
+
+print df_reader.get_chunk(2)

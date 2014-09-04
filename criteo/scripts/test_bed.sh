@@ -1,95 +1,73 @@
 ### test_bed.sh
 
+############# SAMPLE --> PROCESS --> SELECT --> TRANSFORM --> TRAIN --> PREDICT ##################################
 
-# 11,745,437 positive samples in training (train_pos)
-# 34,095,178 negative samples in training
-
-## Draw random sample from train data
+## 0 Draw random sample from train data to be used for testing
+####################################################################
 # python src/subsample.py \
 # -d db/advertising.db \
 # -t train_pos \
-# -n 500000 \
-# -f Label I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11 I12 I13 \
+# -n 250000 \
+# -f Label I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11 I12 I13 C1 C2 C3 C4 C5 C6 C7 C8 C9 C10 C11 C12 C13 C14 C15 C16 C17 C18 C19 C20 C21 C22 C23 C24 C25 C26 \
 # -s 11745437 \
-# -a positive_sample_1 \
-# -b queries/train_queries.h5 \
+# -a pos \
+# -b queries/train_sample.h5 \
 # -x 123 & \
 # python src/subsample.py \
 # -d db/advertising.db \
 # -t train_neg \
-# -n 2000000 \
-# -f Label I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11 I12 I13 \
+# -n 1000000 \
+# -f Label I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11 I12 I13 C1 C2 C3 C4 C5 C6 C7 C8 C9 C10 C11 C12 C13 C14 C15 C16 C17 C18 C19 C20 C21 C22 C23 C24 C25 C26 \
 # -s 34095178 \
-# -a negative_sample_1 \
-# -b queries/train_queries.h5 \
+# -a neg \
+# -b queries/train_sample.h5 \
 # -x 123 
 
-# ## Load test data
-# python query.py \
-# -d advertising.db \
-# -t test \
-# -f Id I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11 I12 I13 \
-# -s test_queries.h5 \
-# -n test_1
 
-# ## Train model and perform CV 
-# python src/cv_analysis.py \
-# -f I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11 I12 I13 \
-# -x 123 \
-# -a positive_sample_1 \
-# -b negative_sample_1 \
-# -c test_1 \
-# -s submissions/submission_4.csv
+## 0.5 Preliminary categorical variable selection: Get all categorical features and choose top ones before variable selection
+###################################################################
+## First create the categorical tables in database
+# array=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26)
+# for I in "${array[@]}"
+# do
+# (sqlite3 db/advertising.db "CREATE TABLE ct_c$I (c$I text, Label integer, N integer); INSERT INTO ct_c$I SELECT c$I, Label, count(Id) as N FROM train group by Label,C$I;") 
+# done
 
-# ## Train model and perform CV 
-# python src/cv_analysis.py \
-# -f I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11 I12 I13 \
-# -x 123 \
-# -a positive_sample_1 \
-# -b negative_sample_1 \
-# -c test_1 \
-# -s submissions/submission_5.csv
-
-
-# # evaluate classifiers
-# python src/eval_clf_performance.py \
-# -f I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11 I12 I13 \
-# -x 123 \
-# -a positive_sample_1 \
-# -b negative_sample_1
-
-
-# ## Extract categorical features and insert into data/categorical_features files
+## Then select top features from the categorical tables
 # python src/get_categorical_features.py \
 # -d db/advertising.db \
 # -f C1 C2 C3 C4 C5 C6 C7 C8 C9 C10 C11 C12 C13 C14 C15 C16 C17 C18 C19 C20 C21 C22 C23 C24 C25 C26 \
 # -m 10000
 
-# Draw random sample from train data
-# python src/subsample.py \
-# -d db/advertising.db \
-# -t train_pos \
-# -n 500000 \
-# -f Label C1 C2 C3 C4 C5 C6 C7 C8 C9 C10 C11 C12 C13 C14 C15 C16 C17 C18 C19 C20 C21 C22 C23 C24 C25 C26 \
-# -s 11745437 \
-# -a positive_sample_2 \
-# -b queries/train_queries.h5 \
-# -x 123 & \
-# python src/subsample.py \
-# -d db/advertising.db \
-# -t train_neg \
-# -n 2000000 \
-# -f Label C1 C2 C3 C4 C5 C6 C7 C8 C9 C10 C11 C12 C13 C14 C15 C16 C17 C18 C19 C20 C21 C22 C23 C24 C25 C26 \
-# -s 34095178 \
-# -a negative_sample_2 \
-# -b queries/train_queries.h5 \
-# -x 123 
+
+## 1 Primary variable selection: Select features using L1 regularized Logistic Regression on training data and also create the subsampled training csv
+####################################################################
+# python src/extract_features.py \
+# -d queries/train_sample.h5 \
+# -n I1 I2 I3 I4 I5 I6 I7 I8 I9 I10 I11 I12 I13 \
+# -c C1 C2 C3 C4 C5 C6 C7 C8 C9 C10 C11 C12 C13 C14 C15 C16 C17 C18 C19 C20 C21 C22 C23 C24 C25 C26 \
+# -o features/feat_dict_1.pkl \
+# -f data/processed/raw_training_sample.csv \
+# -r 0.001
 
 
+## 2 Transform ALL relevant datasets. this includes training sample, train file, and test file 
+####################################################################
+# cat data/processed/raw_training_sample.csv | python src/transform.py \
+# -f features/feat_dict_1.pkl > data/processed/transformed_training_sample_1.csv & \
+# cat data/raw/test.csv | python src/transform.py \
+# -f features/feat_dict_1.pkl > data/processed/test_1.csv & \
+# cat data/raw/train.csv | python src/transform.py \
+# -f features/feat_dict_1.pkl > data/processed/train_1.csv 
 
-python src/cat_feat_select.py \
--f C1 \
--x 123 \
--a positive_sample_2 \
--b negative_sample_2 
 
+## 3 Train your model on the training subsample (in-memory)
+####################################################################
+python src/train.py \
+-i data/processed/transformed_training_sample_1.csv \
+-m models/m_2.pkl &
+
+
+## 4 Classify test set (streaming classifier)
+####################################################################
+cat data/processed/test_1.csv | python src/classify.py -m models/m_2.pkl -v Id Predicted > submissions/sub_2.csv
