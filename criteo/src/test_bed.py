@@ -1,7 +1,7 @@
-import sys
-sys.path.insert(0,"/home/bchelli/Projects/kaggle/util/")
+d = {'a': 1, 'b':2, 'c':3}
+d = set(d.keys())
 
-import bigdata
+print d
+print type(d)
 
-da = bigdata.DataAsset('train.csv', 'test.csv')
-print da
+print 'f' in d

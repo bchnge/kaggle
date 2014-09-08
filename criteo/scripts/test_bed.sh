@@ -63,11 +63,23 @@
 
 ## 3 Train your model on the training subsample (in-memory)
 ####################################################################
-python src/train.py \
--i data/processed/transformed_training_sample_1.csv \
--m models/m_2.pkl &
+# python src/train.py \
+# -i data/processed/transformed_training_sample_1.csv \
+# -m models/m_1.pkl
 
 
 ## 4 Classify test set (streaming classifier)
 ####################################################################
-cat data/processed/test_1.csv | python src/classify.py -m models/m_2.pkl -v Id Predicted > submissions/sub_2.csv
+# cat data/processed/test_1.csv | python src/classify.py -m models/m_1.pkl -v Id Label > submissions/sub_1.csv
+
+
+
+############################################################################
+
+##  generate training features and save them in dictionaries
+# cat data/raw/train.csv | python src/generate_features.py -c features/cat_dict4.pkl -n features/num_dict4.pkl -m 15000
+
+## Perform random sampling/feature selection , with sample rate s and random seed set to x
+
+# cat data/raw/train.csv | python src/cv_feature_extract.py -s 0.1 -x 123
+cat data/raw/train.csv | python src/cv_feature_extract.py -s 0.05 -x 123 -c features/cat_dict4.pkl -n features/num_dict4.pkl >  foo.csv 
