@@ -25,7 +25,7 @@ def get_summary(grouped_df):
 	return grouped_df['interest_high','interest_medium','interest_low'].agg({'interest_share' : lambda x: proportion(x,precision = 1), 'count': np.count_nonzero, })
 
 def main():
-	df = pd.read_json('train.json')
+	df = pd.read_json('data/train.json')
 
 	clusters = np.genfromtxt('clusters.results', delimiter = ',')
 

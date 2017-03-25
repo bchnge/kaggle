@@ -16,7 +16,7 @@ pd.set_option('display.width', 1000)
 #http://geoffboeing.com/2014/08/clustering-to-reduce-spatial-data-set-size/
 
 def main():
-	df = pd.read_json('train.json')
+	df = pd.read_json('data/train.json')
 
 	coords = df.as_matrix(columns=['latitude', 'longitude'])
 
