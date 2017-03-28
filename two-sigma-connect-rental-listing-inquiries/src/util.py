@@ -7,7 +7,7 @@ class features(object):
 	self.func = func
 
     def apply_transform(self, X):
-	return np.apply_along_axis(self.func, axis = 1, X)
+	return np.apply_along_axis(func1d = self.func, axis = 1, arr =  X)
 
 def get_data(fname, y_label = 'interest_level', train = True):
     df = pd.read_json(fname)
@@ -15,7 +15,7 @@ def get_data(fname, y_label = 'interest_level', train = True):
 	X = df.drop(y_label)
 	X_labels = X.columns
 	X = X.values
-	y = df[y_label).values
+	y = df[y_label].values
 	return X,y,X_labels
     else:
 	X_labels = df.columns
