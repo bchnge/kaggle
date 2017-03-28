@@ -12,7 +12,7 @@ class features(object):
 def get_data(fname, y_label = 'interest_level', train = True):
     df = pd.read_json(fname)
     if train:
-	X = df.drop(y_label)
+	X = df.drop(y_label, axis = 1)
 	X_labels = X.columns
 	X = X.values
 	y = df[y_label].values
