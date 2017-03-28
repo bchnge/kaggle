@@ -9,7 +9,8 @@ start-nb :
 	nvidia-docker run -d --name dsnb -it -p 8888:8888 -v $(current_dir)/src:$(current_dir)/src -v $(current_dir)/notebooks:$(current_dir)/notebooks -v $(data_dir):$(current_dir)/data -w $(current_dir)/notebooks bchnge/ds /bin/sh -c "jupyter notebook"
 
 stop-nb :
-	nvidia-docker rm -f  dsnb
+	docker kill dsnb
+	docker rm dsnb
 
 get-clusters : scripts/distances.py
 	nvidia-docker run -v $(current_dir):$(current_dir) -v $(data_dir):$(current_dir)/data -w $(current_dir) bchnge/ds python scripts/distances.py > logs/clusters.log
